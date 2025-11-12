@@ -1,0 +1,115 @@
+{
+  "animalEating": [
+    {"wolf": {
+      "boa": 0, "fox": 0, "bear": 0, "eagle": 0, "horse": 10, "deer": 15, "rabbit": 60, "mouse": 80,
+      "goat": 60, "sheep": 70, "boar": 15, "buffalo": 10, "duck": 40, "caterpillar": 0, "plants": 0
+    }},
+    {"boa": {
+      "wolf": 0, "fox": 15, "bear": 0, "eagle": 0, "horse": 0, "deer": 0, "rabbit": 20, "mouse": 40,
+      "goat": 0, "sheep": 0, "boar": 0, "buffalo": 0, "duck": 10, "caterpillar": 0, "plants": 0
+    }},
+    {"fox": {
+      "wolf": 0, "boa": 0, "bear": 0, "eagle": 0, "horse": 0, "deer": 0, "rabbit": 70, "mouse": 90,
+      "goat": 0, "sheep": 0, "boar": 0, "buffalo": 0, "duck": 60, "caterpillar": 40, "plants": 0
+    }},
+    {"bear": {
+      "wolf": 0, "boa": 80, "fox": 0, "eagle": 0, "horse": 40, "deer": 80, "rabbit": 80, "mouse": 90,
+      "goat": 70, "sheep": 70, "boar": 50, "buffalo": 20, "duck": 10, "caterpillar": 0, "plants": 0
+    }},
+    {"eagle": {
+      "wolf": 0, "boa": 0, "fox": 10, "bear": 0, "horse": 0, "deer": 0, "rabbit": 90, "mouse": 90,
+      "goat": 0, "sheep": 0, "boar": 0, "buffalo": 0, "duck": 80, "caterpillar": 0, "plants": 0
+    }},
+    {"horse": {
+      "wolf": 0, "boa": 0, "fox": 0, "bear": 0, "eagle": 0, "deer": 0, "rabbit": 0, "mouse": 0,
+      "goat": 0, "sheep": 0, "boar": 0, "buffalo": 0, "duck": 0, "caterpillar": 0, "plants": 100
+    }},
+    {"deer": {
+      "wolf": 0, "boa": 0, "fox": 0, "bear": 0, "eagle": 0, "horse": 0, "rabbit": 0, "mouse": 0,
+      "goat": 0, "sheep": 0, "boar": 0, "buffalo": 0, "duck": 0, "caterpillar": 0, "plants": 100
+    }},
+    {"rabbit": {
+      "wolf": 0, "boa": 0, "fox": 0, "bear": 0, "eagle": 0, "horse": 0, "deer": 0, "mouse": 0,
+      "goat": 0, "sheep": 0, "boar": 0, "buffalo": 0, "duck": 0, "caterpillar": 0, "plants": 100
+    }},
+    {"mouse": {
+      "wolf": 0, "boa": 0, "fox": 0, "bear": 0, "eagle": 0, "horse": 0, "deer": 0, "rabbit": 0,
+      "goat": 0, "sheep": 0, "boar": 0, "buffalo": 0, "duck": 0, "caterpillar": 90, "plants": 100
+    }},
+    {"goat": {
+      "wolf": 0, "boa": 0, "fox": 0, "bear": 0, "eagle": 0, "horse": 0, "deer": 0, "rabbit": 0,
+      "mouse": 0, "sheep": 0, "boar": 0, "buffalo": 0, "duck": 0, "caterpillar": 0, "plants": 100
+    }},
+    {"sheep": {
+      "wolf": 0, "boa": 0, "fox": 0, "bear": 0, "eagle": 0, "horse": 0, "deer": 0, "rabbit": 0,
+      "mouse": 0, "goat": 0, "boar": 0, "buffalo": 0, "duck": 0, "caterpillar": 0, "plants": 100
+    }},
+    {"boar": {
+      "wolf": 0, "boa": 0, "fox": 0, "bear": 0, "eagle": 0, "horse": 0, "deer": 0, "rabbit": 0,
+      "mouse": 50, "goat": 0, "sheep": 0, "buffalo": 0, "duck": 0, "caterpillar": 90, "plants": 100
+    }},
+    {"buffalo": {
+      "wolf": 0, "boa": 0, "fox": 0, "bear": 0, "eagle": 0, "horse": 0, "deer": 0, "rabbit": 0,
+      "mouse": 0, "goat": 0, "sheep": 0, "boar": 0, "duck": 0, "caterpillar": 0, "plants": 100
+    }},
+    {"duck": {
+      "wolf": 0, "boa": 0, "fox": 0, "bear": 0, "eagle": 0, "horse": 0, "deer": 0, "rabbit": 0,
+      "mouse": 0, "goat": 0, "sheep": 0, "boar": 0, "buffalo": 0, "caterpillar": 90, "plants": 100
+    }},
+    {"caterpillar": {
+      "wolf": 0, "boa": 0, "fox": 0, "bear": 0, "eagle": 0, "horse": 0, "deer": 0, "rabbit": 0,
+      "mouse": 0, "goat": 0, "sheep": 0, "boar": 0, "buffalo": 0, "duck": 0, "plants": 100
+    }}
+  ],
+
+  "animalStats": [
+    {"wolf": {
+      "weight": 50, "maxCountPerCell": 30, "speed": 3, "foodRequired": 8
+    }},
+    {"boa": {
+      "weight": 15, "maxCountPerCell": 30, "speed": 1, "foodRequired": 3
+    }},
+    {"fox": {
+      "weight": 8, "maxCountPerCell": 30, "speed": 2, "foodRequired": 2
+    }},
+    {"bear": {
+      "weight": 500, "maxCountPerCell": 5, "speed": 2, "foodRequired": 80
+    }},
+    {"eagle": {
+      "weight": 6, "maxCountPerCell": 20, "speed": 3, "foodRequired": 1
+    }},
+    {"horse": {
+      "weight": 400, "maxCountPerCell": 20, "speed": 4, "foodRequired": 60
+    }},
+    {"deer": {
+      "weight": 300, "maxCountPerCell": 20, "speed": 4, "foodRequired": 50
+    }},
+    {"rabbit": {
+      "weight": 2, "maxCountPerCell": 150, "speed": 2, "foodRequired": 0.45
+    }},
+    {"mouse": {
+      "weight": 0.05, "maxCountPerCell": 500, "speed": 1, "foodRequired": 0.01
+    }},
+    {"goat": {
+      "weight": 60, "maxCountPerCell": 140, "speed": 3, "foodRequired": 10
+    }},
+    {"sheep": {
+      "weight": 70, "maxCountPerCell": 140, "speed": 3, "foodRequired": 15
+    }},
+    {"boar": {
+      "weight": 400, "maxCountPerCell": 50, "speed": 2, "foodRequired": 50
+    }},
+    {"buffalo": {
+      "weight": 700, "maxCountPerCell": 10, "speed": 3, "foodRequired": 100
+    }},
+    {"duck": {
+      "weight": 1, "maxCountPerCell": 200, "speed": 4, "foodRequired": 0.15
+    }},
+    {"caterpillar": {
+      "weight": 0.01, "maxCountPerCell": 1000, "speed": 0, "foodRequired": 0
+    }},
+    {"plants": {
+      "weight": 1, "maxCountPerCell": 200, "speed": 0, "foodRequired": 0
+    }}
+  ]
+}
