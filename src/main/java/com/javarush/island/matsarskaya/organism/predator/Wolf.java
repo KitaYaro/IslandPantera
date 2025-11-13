@@ -1,0 +1,8 @@
+package com.javarush.island.matsarskaya.organism.predator;
+
+import com.javarush.island.matsarskaya.organism.Animals;
+
+public class Wolf extends Animals {
+    public Wolf() {
+    }
+}

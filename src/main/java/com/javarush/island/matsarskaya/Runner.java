@@ -1,6 +1,9 @@
 package com.javarush.island.matsarskaya;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.javarush.island.matsarskaya.map.GameMap;
+import com.javarush.island.matsarskaya.organism.herbivore.Rabbit;
+import com.javarush.island.matsarskaya.organism.predator.Wolf;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,5 +30,23 @@ public class Runner {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        GameMap gameMap = new GameMap(10, 10);
+        Wolf wolf = new Wolf();
+        Rabbit rabbit = new Rabbit();
+        wolf.setGameMap(gameMap);
+        rabbit.setGameMap(gameMap);
+        gameMap.placeAnimal(wolf, 1, 1);
+        gameMap.placeAnimal(rabbit, 2, 2);
+
+        System.out.println("Начальная позиция волка: (" + wolf.getX() + ", " + wolf.getY() + ")");
+        System.out.println("Начальная позиция зайца: (" + rabbit.getX() + ", " + rabbit.getY() + ")");
+
+        // Выполняем шаг перемещения
+        wolf.walking();
+        rabbit.walking();
+
+        // Проверяем новые позиции
+        System.out.println("Новая позиция волка: (" + wolf.getX() + ", " + wolf.getY() + ")");
+        System.out.println("Новая позиция зайца: (" + rabbit.getX() + ", " + rabbit.getY() + ")");
     }
 }
