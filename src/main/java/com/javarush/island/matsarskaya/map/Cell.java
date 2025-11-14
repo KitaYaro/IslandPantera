@@ -17,17 +17,20 @@ public class Cell {
         this.cellX = cellX;
         this.cellY = cellY;
     }
-    public void addAnimal(Animal animal) {
+    public synchronized void addAnimal(Animal animal) {
         animalList.add(animal);
     }
-    public void removeAnimal(Animal animal) {
+    public synchronized void removeAnimal(Animal animal) {
         animalList.remove(animal);
     }
     public List<Animal> getAnimalList(){
         return new ArrayList<>(animalList);
     }
     public Cell getNeighboringCell(int x, int y) {
-        return new Cell(x, y);
+        if (gameMap.isValidPosition(x, y)) {
+            return gameMap.getCell(x, y);
+        }
+        return null;
     }
 
 }

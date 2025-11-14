@@ -12,6 +12,17 @@ public abstract class Animals implements Animal{
     private int y;
     protected boolean alive = true;
     protected GameMap gameMap;
+    protected double weight;
+    protected int speed;
+    protected double foodRequired;
+    protected int maxCountPerCell;
+
+    public void initializeFromConfig(double weight, int speed, double foodRequired, int maxCountPerCell){
+        this.weight = weight;
+        this.speed = speed;
+        this.foodRequired = foodRequired;
+        this.maxCountPerCell = maxCountPerCell;
+    }
 
     public void setCoordinates(int x, int y) {
         this.x = x;
@@ -57,6 +68,7 @@ public abstract class Animals implements Animal{
 
     @Override
     public void eating() {
+        System.out.println(this.getClass().getSimpleName() + " is eating.");
     }
 
     @Override
