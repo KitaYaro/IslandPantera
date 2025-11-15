@@ -2,7 +2,7 @@ package com.javarush.island.matsarskaya;
 
 import com.javarush.island.matsarskaya.config.AnimalConfigService;
 import com.javarush.island.matsarskaya.config.AnimalStats;
-import com.javarush.island.matsarskaya.config.ConfigLoaderService;
+import com.javarush.island.matsarskaya.services.ConfigLoaderService;
 import com.javarush.island.matsarskaya.config.IslandConfig;
 import com.javarush.island.matsarskaya.map.GameMap;
 import com.javarush.island.matsarskaya.organism.herbivore.Rabbit;
@@ -28,7 +28,9 @@ public class Runner {
 
         GameMap gameMap = new GameMap(10, 10);
         Wolf wolf = new Wolf();
+        Wolf wolf2 = new Wolf();
         Rabbit rabbit = new Rabbit();
+        Rabbit rabbit2 = new Rabbit();
 
         // Создаем сервис для работы с конфигурацией животных
         AnimalConfigService animalConfigService = new AnimalConfigService(config);
@@ -39,8 +41,8 @@ public class Runner {
                     wolfStats.getWeight(),
                     wolfStats.getSpeed(),
                     wolfStats.getFoodRequired(),
-                    wolfStats.getMaxCountPerCell()
-            );
+                    wolfStats.getMaxCountPerCell(),
+                    wolfStats.getWeightLossPerStep());
         }
 
         // Аналогично для зайца
@@ -50,41 +52,90 @@ public class Runner {
                     rabbitStats.getWeight(),
                     rabbitStats.getSpeed(),
                     rabbitStats.getFoodRequired(),
-                    rabbitStats.getMaxCountPerCell()
-            );
+                    rabbitStats.getMaxCountPerCell(),
+                    wolfStats.getWeightLossPerStep());
         }
-            wolf.setGameMap(gameMap);
-            rabbit.setGameMap(gameMap);
-            gameMap.placeAnimal(wolf, 1, 1);
-            gameMap.placeAnimal(rabbit, 2, 2);
+        if (wolfStats != null) {
+            wolf2.initializeFromConfig(
+                    wolfStats.getWeight(),
+                    wolfStats.getSpeed(),
+                    wolfStats.getFoodRequired(),
+                    wolfStats.getMaxCountPerCell(),
+                    wolfStats.getWeightLossPerStep());
+        }
 
-            System.out.println("Начальная позиция волка: (" + wolf.getX() + ", " + wolf.getY() + ")");
-            System.out.println("Начальная позиция зайца: (" + rabbit.getX() + ", " + rabbit.getY() + ")");
+        if (rabbitStats != null) {
+            rabbit2.initializeFromConfig(
+                    rabbitStats.getWeight(),
+                    rabbitStats.getSpeed(),
+                    rabbitStats.getFoodRequired(),
+                    rabbitStats.getMaxCountPerCell(),
+                    wolfStats.getWeightLossPerStep());
+        }
+        wolf.setGameMap(gameMap);
+        rabbit.setGameMap(gameMap);
+        wolf2.setGameMap(gameMap);
+        rabbit2.setGameMap(gameMap);
+        gameMap.placeAnimal(wolf, 1, 2);
+        gameMap.placeAnimal(rabbit, 2, 1);
+        gameMap.placeAnimal(wolf2, 1, 1);
+        gameMap.placeAnimal(rabbit2, 2, 2);
 
-            // Выполняем шаг перемещения
+        System.out.println("Начальная позиция волка: (" + wolf.getX() + ", " + wolf.getY() + ")");
+        System.out.println("Начальная позиция зайца: (" + rabbit.getX() + ", " + rabbit.getY() + ")");
+
+
+        // Проверяем новые позиции
+        System.out.println("Новая позиция волка: (" + wolf.getX() + ", " + wolf.getY() + ")");
+        System.out.println("Новая позиция зайца: (" + rabbit.getX() + ", " + rabbit.getY() + ")");
+
+        ConsoleRender renderer = new ConsoleRender();
+        System.out.println("Initial state:");
+        renderer.renderMap(gameMap);
+
+        for (int i = 0; i < 10; i++) { // Show 5 steps
+            System.out.println("\nStep " + (i + 1) + ":");
+            System.out.println("Total animals on map: " + gameMap.countAnimals());
+            System.out.println("BEFORE ACTIONS:");
+
+            // Подготовка к проверке питания
+            wolf.prepareForEatingCheck();
+            wolf2.prepareForEatingCheck();
+            rabbit.prepareForEatingCheck();
+            rabbit2.prepareForEatingCheck();
+
+            wolf.printStatus();
+            wolf2.printStatus();
+            rabbit.printStatus();
+            rabbit2.printStatus();
+            //  Добавляем этап передвижения
             wolf.walking();
+            wolf2.walking();
             rabbit.walking();
+            rabbit2.walking();
+            // Добавляем этап питания
+            wolf.eating(animalConfigService);
+            wolf2.eating(animalConfigService);
+            rabbit.eating(animalConfigService);
+            rabbit2.eating(animalConfigService);
 
-            // Проверяем новые позиции
-            System.out.println("Новая позиция волка: (" + wolf.getX() + ", " + wolf.getY() + ")");
-            System.out.println("Новая позиция зайца: (" + rabbit.getX() + ", " + rabbit.getY() + ")");
+            // Выводим статистику после действий
+            System.out.println("AFTER ACTIONS:");
+            // Сначала все животные теряют вес
+            wolf.loseWeightOverTime();
+            wolf2.loseWeightOverTime();
+            rabbit.loseWeightOverTime();
+            rabbit2.loseWeightOverTime();
 
-            ConsoleRender renderer = new ConsoleRender();
-            System.out.println("Initial state:");
+            System.out.println("Total animals on map: " + gameMap.countAnimals());
             renderer.renderMap(gameMap);
 
-            for (int i = 0; i < 5; i++) { // Show 5 steps
-                System.out.println("\nStep " + (i + 1) + ":");
-                wolf.walking();
-                rabbit.walking();
-                renderer.renderMap(gameMap);
-
-                try {
-                    Thread.sleep(1000); // 1 second pause
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
-                }
+            try {
+                Thread.sleep(1000); // 1 second pause
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
             }
         }
     }
+}

@@ -1,6 +1,7 @@
-package com.javarush.island.matsarskaya.config;
+package com.javarush.island.matsarskaya.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.javarush.island.matsarskaya.config.IslandConfig;
 
 import java.io.File;
 import java.io.IOException;

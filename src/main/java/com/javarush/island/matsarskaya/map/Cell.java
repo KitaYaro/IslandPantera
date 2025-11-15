@@ -1,6 +1,6 @@
 package com.javarush.island.matsarskaya.map;
 
-import com.javarush.island.matsarskaya.organism.Animal;
+import com.javarush.island.matsarskaya.entity.Animal;
 import lombok.Getter;
 
 import java.util.ArrayList;

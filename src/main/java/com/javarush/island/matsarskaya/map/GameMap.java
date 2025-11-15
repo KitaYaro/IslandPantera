@@ -1,7 +1,7 @@
 package com.javarush.island.matsarskaya.map;
 
-import com.javarush.island.matsarskaya.organism.Animal;
-import com.javarush.island.matsarskaya.organism.Animals;
+import com.javarush.island.matsarskaya.entity.Animal;
+import com.javarush.island.matsarskaya.entity.Animals;
 import lombok.Getter;
 import lombok.Setter;
 import java.util.ArrayList;
@@ -46,6 +46,19 @@ public class GameMap {
                 }
             }
         }
+    }
+    // В GameMap.java
+    public int countAnimals() {
+        int count = 0;
+        for (int x = 0; x < height; x++) {
+            for (int y = 0; y < width; y++) {
+                Cell cell = cells[x][y];
+                if (cell != null) {
+                    count += cell.getAnimalList().size();
+                }
+            }
+        }
+        return count;
     }
 
 

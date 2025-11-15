@@ -6,6 +6,7 @@ import java.util.Map;
 
 @Getter
 @Setter
+//отвечает за выполнение логики питания
 public class AnimalEating {
     private Map<String, Integer> eatingProbabilities;
 }

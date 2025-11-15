@@ -10,4 +10,5 @@ public class AnimalStats {
     private int maxCountPerCell;
     private int speed;
     private double foodRequired;
+    private int weightLossPerStep = 1;
 }

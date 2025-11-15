@@ -85,7 +85,7 @@
       "weight": 300, "maxCountPerCell": 20, "speed": 4, "foodRequired": 50
     }},
     {"rabbit": {
-      "weight": 2, "maxCountPerCell": 150, "speed": 2, "foodRequired": 0.45
+      "weight": 10, "maxCountPerCell": 150, "speed": 2, "foodRequired": 0.45
     }},
     {"mouse": {
       "weight": 0.05, "maxCountPerCell": 500, "speed": 1, "foodRequired": 0.01

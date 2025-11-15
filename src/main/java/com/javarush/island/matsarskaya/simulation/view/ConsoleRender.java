@@ -2,7 +2,7 @@ package com.javarush.island.matsarskaya.simulation.view;
 
 import com.javarush.island.matsarskaya.map.Cell;
 import com.javarush.island.matsarskaya.map.GameMap;
-import com.javarush.island.matsarskaya.organism.Animal;
+import com.javarush.island.matsarskaya.entity.Animal;
 import com.javarush.island.matsarskaya.organism.herbivore.Rabbit;
 import com.javarush.island.matsarskaya.organism.predator.Wolf;
 import com.javarush.island.matsarskaya.simulation.IconAnimals;
