@@ -7,4 +7,5 @@ public interface Animal {
     void eating(AnimalConfigService animalConfigService);
     void reproduction();
     boolean isAlive();
+    void loseWeightOverTime();
 }

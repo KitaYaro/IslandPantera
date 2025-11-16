@@ -64,7 +64,7 @@
 
   "animalStats": [
     {"wolf": {
-      "weight": 50, "maxCountPerCell": 30, "speed": 3, "foodRequired": 8
+      "weight": 10, "maxCountPerCell": 30, "speed": 3, "foodRequired": 8
     }},
     {"boa": {
       "weight": 15, "maxCountPerCell": 30, "speed": 1, "foodRequired": 3
