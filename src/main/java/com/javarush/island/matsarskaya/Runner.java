@@ -2,21 +2,26 @@ package com.javarush.island.matsarskaya;
 
 import com.javarush.island.matsarskaya.config.AnimalConfigService;
 import com.javarush.island.matsarskaya.config.AnimalStats;
+import com.javarush.island.matsarskaya.entity.Animals;
+import com.javarush.island.matsarskaya.organism.Grass;
+import com.javarush.island.matsarskaya.organism.herbivore.*;
+import com.javarush.island.matsarskaya.organism.predator.*;
 import com.javarush.island.matsarskaya.services.ConfigLoaderService;
 import com.javarush.island.matsarskaya.config.IslandConfig;
 import com.javarush.island.matsarskaya.map.GameMap;
-import com.javarush.island.matsarskaya.organism.herbivore.Rabbit;
-import com.javarush.island.matsarskaya.organism.predator.Wolf;
 import com.javarush.island.matsarskaya.services.SimulationManager;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 
 public class Runner {
     public static void main(String[] args) {
         // Загрузка конфигурации
         ConfigLoaderService configLoader = new ConfigLoaderService();
-        IslandConfig config = null;
+        IslandConfig config;
         try {
             config = configLoader.loadConfig();
             System.out.println("Конфигурация успешно загружена");
@@ -26,186 +31,91 @@ public class Runner {
             return;
         }
 
-        GameMap gameMap = new GameMap(5, 7);
-        Wolf wolf = new Wolf();
-        Wolf wolf2 = new Wolf();
-        Rabbit rabbit = new Rabbit();
-        Rabbit rabbit2 = new Rabbit();
+        GameMap gameMap = new GameMap(30, 20);
 
         // Создаем сервис для работы с конфигурацией животных
         AnimalConfigService animalConfigService = new AnimalConfigService(config);
-        // Получаем параметры для волка
-        AnimalStats wolfStats = animalConfigService.getAnimalStats("wolf");
-        if (wolfStats != null) {
-            wolf.initializeFromConfig(
-                    wolfStats.getWeight(),
-                    wolfStats.getSpeed(),
-                    wolfStats.getFoodRequired(),
-                    wolfStats.getMaxCountPerCell(),
-                    wolfStats.getWeightLossPerStep());
-        }
 
-        // Аналогично для зайца
-        AnimalStats rabbitStats = animalConfigService.getAnimalStats("rabbit");
-        if (rabbitStats != null) {
-            rabbit.initializeFromConfig(
-                    rabbitStats.getWeight(),
-                    rabbitStats.getSpeed(),
-                    rabbitStats.getFoodRequired(),
-                    rabbitStats.getMaxCountPerCell(),
-                    rabbitStats.getWeightLossPerStep());
-        }
-        if (wolfStats != null) {
-            wolf2.initializeFromConfig(
-                    wolfStats.getWeight(),
-                    wolfStats.getSpeed(),
-                    wolfStats.getFoodRequired(),
-                    wolfStats.getMaxCountPerCell(),
-                    wolfStats.getWeightLossPerStep());
-        }
+        // Добавление начальной травы на карту для тестирования
+        addInitialGrass(gameMap);
 
-        if (rabbitStats != null) {
-            rabbit2.initializeFromConfig(
-                    rabbitStats.getWeight(),
-                    rabbitStats.getSpeed(),
-                    rabbitStats.getFoodRequired(),
-                    rabbitStats.getMaxCountPerCell(),
-                    rabbitStats.getWeightLossPerStep());
-        }
-        wolf.setGameMap(gameMap);
-        rabbit.setGameMap(gameMap);
-        wolf2.setGameMap(gameMap);
-        rabbit2.setGameMap(gameMap);
-        gameMap.placeAnimal(wolf, 1, 2);
-        gameMap.placeAnimal(rabbit, 2, 1);
-        gameMap.placeAnimal(wolf2, 1, 1);
-        gameMap.placeAnimal(rabbit2, 2, 2);
+        // Создаем животных на основе конфигурации
+        createAnimalsFromConfig(gameMap, animalConfigService);
 
-        // Создаем и запускаем менеджер симуляции вместо ручного цикла
+        // Создаем и запускаем менеджер симуляции
         SimulationManager simulationManager = new SimulationManager(gameMap, animalConfigService);
         simulationManager.startSimulation();
     }
+
+    private static void addInitialGrass(GameMap gameMap) {
+        // Добавление начальной травы на карту для тестирования
+        for (int i = 0; i < 20; i++) {
+            Grass grass = new Grass();
+            gameMap.placeGrass(grass, 0, i); // Размещаем в первой строке
+        }
+    }
+
+    private static void createAnimalsFromConfig(GameMap gameMap, AnimalConfigService animalConfigService) {
+        // Список всех доступных типов животных
+        List<String> animalTypes = Arrays.asList(
+                "wolf", "boa", "fox", "bear", "eagle",         // Хищники
+                "horse", "deer", "rabbit", "mouse", "goat",    // Травоядные
+                "sheep", "boar", "buffalo", "duck", "caterpillar"
+        );
+
+        // Для каждого типа животных создаем несколько экземпляров
+        for (String animalType : animalTypes) {
+            AnimalStats stats = animalConfigService.getAnimalStats(animalType);
+            if (stats != null) {
+                // Создаем от 1 до 3 животных каждого типа для тестирования
+                int count = ThreadLocalRandom.current().nextInt(30, 100);
+                for (int i = 0; i < count; i++) {
+                    Animals animal = createAnimalInstance(animalType);
+                    if (animal != null) {
+                        animal.initializeFromConfig(
+                                stats.getWeight(),
+                                stats.getSpeed(),
+                                stats.getFoodRequired(),
+                                stats.getMaxCountPerCell(),
+                                stats.getWeightLossPerStep()
+                        );
+                        animal.setGameMap(gameMap);
+
+                        // Размещаем животное в случайной ячейке
+                        int x = ThreadLocalRandom.current().nextInt(0, gameMap.getHeight());
+                        int y = ThreadLocalRandom.current().nextInt(0, gameMap.getWidth());
+                        gameMap.placeAnimal(animal, x, y);
+                    }
+                }
+            }
+        }
+    }
+
+    private static Animals createAnimalInstance(String animalType) {
+        switch (animalType.toLowerCase()) {
+            // Хищники
+            case "wolf": return new Wolf();
+            case "boa": return new Boa();
+            case "fox": return new Fox();
+            case "bear": return new Bear();
+            case "eagle": return new Eagle();
+
+            // Травоядные
+            case "horse": return new Horse();
+            case "deer": return new Deer();
+            case "rabbit": return new Rabbit();
+            case "mouse": return new Mouse();
+            case "goat": return new Goat();
+            case "sheep": return new Sheep();
+            case "boar": return new Boar();
+            case "buffalo": return new Buffalo();
+            case "duck": return new Duck();
+            case "caterpillar": return new Caterpillar();
+
+            default:
+                System.err.println("Неизвестный тип животного: " + animalType);
+                return null;
+        }
+    }
 }
-//        // Загрузка конфигурации
-//        ConfigLoaderService configLoader = new ConfigLoaderService();
-//        IslandConfig config = null;
-//        try {
-//            config = configLoader.loadConfig();
-//            System.out.println("Конфигурация успешно загружена");
-//        } catch (IOException e) {
-//            System.err.println("Ошибка загрузки конфигурации: " + e.getMessage());
-//            e.printStackTrace();
-//            return;
-//        }
-//
-//        GameMap gameMap = new GameMap(10, 10);
-//        Wolf wolf = new Wolf();
-//        Wolf wolf2 = new Wolf();
-//        Rabbit rabbit = new Rabbit();
-//        Rabbit rabbit2 = new Rabbit();
-//
-//        // Создаем сервис для работы с конфигурацией животных
-//        AnimalConfigService animalConfigService = new AnimalConfigService(config);
-//        // Получаем параметры для волка
-//        AnimalStats wolfStats = animalConfigService.getAnimalStats("wolf");
-//        if (wolfStats != null) {
-//            wolf.initializeFromConfig(
-//                    wolfStats.getWeight(),
-//                    wolfStats.getSpeed(),
-//                    wolfStats.getFoodRequired(),
-//                    wolfStats.getMaxCountPerCell(),
-//                    wolfStats.getWeightLossPerStep());
-//        }
-//
-//        // Аналогично для зайца
-//        AnimalStats rabbitStats = animalConfigService.getAnimalStats("rabbit");
-//        if (rabbitStats != null) {
-//            rabbit.initializeFromConfig(
-//                    rabbitStats.getWeight(),
-//                    rabbitStats.getSpeed(),
-//                    rabbitStats.getFoodRequired(),
-//                    rabbitStats.getMaxCountPerCell(),
-//                    wolfStats.getWeightLossPerStep());
-//        }
-//        if (wolfStats != null) {
-//            wolf2.initializeFromConfig(
-//                    wolfStats.getWeight(),
-//                    wolfStats.getSpeed(),
-//                    wolfStats.getFoodRequired(),
-//                    wolfStats.getMaxCountPerCell(),
-//                    wolfStats.getWeightLossPerStep());
-//        }
-//
-//        if (rabbitStats != null) {
-//            rabbit2.initializeFromConfig(
-//                    rabbitStats.getWeight(),
-//                    rabbitStats.getSpeed(),
-//                    rabbitStats.getFoodRequired(),
-//                    rabbitStats.getMaxCountPerCell(),
-//                    wolfStats.getWeightLossPerStep());
-//        }
-//        wolf.setGameMap(gameMap);
-//        rabbit.setGameMap(gameMap);
-//        wolf2.setGameMap(gameMap);
-//        rabbit2.setGameMap(gameMap);
-//        gameMap.placeAnimal(wolf, 1, 2);
-//        gameMap.placeAnimal(rabbit, 2, 1);
-//        gameMap.placeAnimal(wolf2, 1, 1);
-//        gameMap.placeAnimal(rabbit2, 2, 2);
-//
-//        System.out.println("Начальная позиция волка: (" + wolf.getX() + ", " + wolf.getY() + ")");
-//        System.out.println("Начальная позиция зайца: (" + rabbit.getX() + ", " + rabbit.getY() + ")");
-//
-//
-//        // Проверяем новые позиции
-//        System.out.println("Новая позиция волка: (" + wolf.getX() + ", " + wolf.getY() + ")");
-//        System.out.println("Новая позиция зайца: (" + rabbit.getX() + ", " + rabbit.getY() + ")");
-//
-//        ConsoleRender renderer = new ConsoleRender();
-//        System.out.println("Initial state:");
-//        renderer.renderMap(gameMap);
-//
-//        for (int i = 0; i < 10; i++) { // Show 5 steps
-//            System.out.println("\nStep " + (i + 1) + ":");
-//            System.out.println("Total animals on map: " + gameMap.countAnimals());
-//            System.out.println("BEFORE ACTIONS:");
-//
-//            // Подготовка к проверке питания
-//            wolf.prepareForEatingCheck();
-//            wolf2.prepareForEatingCheck();
-//            rabbit.prepareForEatingCheck();
-//            rabbit2.prepareForEatingCheck();
-//
-//            wolf.printStatus();
-//            wolf2.printStatus();
-//            rabbit.printStatus();
-//            rabbit2.printStatus();
-//            //  Добавляем этап передвижения
-//            wolf.walking();
-//            wolf2.walking();
-//            rabbit.walking();
-//            rabbit2.walking();
-//            // Добавляем этап питания
-//            wolf.eating(animalConfigService);
-//            wolf2.eating(animalConfigService);
-//            rabbit.eating(animalConfigService);
-//            rabbit2.eating(animalConfigService);
-//
-//            // Выводим статистику после действий
-//            System.out.println("AFTER ACTIONS:");
-//            // Сначала все животные теряют вес
-//            wolf.loseWeightOverTime();
-//            wolf2.loseWeightOverTime();
-//            rabbit.loseWeightOverTime();
-//            rabbit2.loseWeightOverTime();
-//
-//            System.out.println("Total animals on map: " + gameMap.countAnimals());
-//            renderer.renderMap(gameMap);
-//
-//            try {
-//                Thread.sleep(1000); // 1 second pause
-//            } catch (InterruptedException e) {
-//                Thread.currentThread().interrupt();
-//                break;
-//            }
-//        }
+

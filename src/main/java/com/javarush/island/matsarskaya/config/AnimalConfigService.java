@@ -10,6 +10,9 @@ public class AnimalConfigService {
     public AnimalConfigService(IslandConfig islandConfig) {
         this.islandConfig = islandConfig;
     }
+    public AnimalStats getPlantStats() {
+        return getAnimalStats("plants");
+    }
     public AnimalStats getAnimalStats(String animalType) {
         if (islandConfig == null || islandConfig.getAnimalStats() == null) {
             return null;
