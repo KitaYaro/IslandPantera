@@ -4,6 +4,8 @@ import com.javarush.island.matsarskaya.config.AnimalConfigService;
 import com.javarush.island.matsarskaya.map.Cell;
 import com.javarush.island.matsarskaya.map.GameMap;
 import com.javarush.island.matsarskaya.organism.Eating;
+import com.javarush.island.matsarskaya.organism.predator.Bear;
+import com.javarush.island.matsarskaya.organism.predator.Wolf;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -19,6 +21,7 @@ public abstract class Animals implements Animal {
     protected boolean alive = true;
     protected GameMap gameMap;
     protected double weight;
+    private double maxWeight; // максимальный вес из конфигурации
     protected int speed;
     protected double foodRequired;
     protected int maxCountPerCell;
@@ -31,6 +34,7 @@ public abstract class Animals implements Animal {
 
     public void initializeFromConfig(double weight, int speed, double foodRequired, int maxCountPerCell, int weightLossPerStep) {
         this.weight = weight;
+        this.maxWeight = weight;
         this.speed = speed;
         this.foodRequired = foodRequired;
         this.maxCountPerCell = maxCountPerCell;
@@ -69,8 +73,18 @@ public abstract class Animals implements Animal {
 
                 // Синхронизация при перемещении между ячейками
                 if (currentCell != null && targetCell != null) {
-                    synchronized (currentCell) {
-                        synchronized (targetCell) {
+                    // Всегда захватываем мониторы в порядке возрастания координат
+                    Cell firstCell, secondCell;
+                    if (currentCell.hashCode() < targetCell.hashCode()) {
+                        firstCell = currentCell;
+                        secondCell = targetCell;
+                    } else {
+                        firstCell = targetCell;
+                        secondCell = currentCell;
+                    }
+
+                    synchronized (firstCell) {
+                        synchronized (secondCell) {
                             // Проверяем, не превышено ли максимальное количество животных в целевой ячейке
                             if (targetCell.getAnimalList().size() < this.maxCountPerCell) {
                                 currentCell.removeAnimal(this);
@@ -96,8 +110,19 @@ public abstract class Animals implements Animal {
     public void reproduction() {
         if (!isAlive() || gameMap == null) return;
 
+        // Если животное не ело в этом такте, оно не может размножаться
+//        if (!this.hasEaten) {
+//            return;
+//        }
+
         // Добавим проверку минимального веса для размножения
-        if (this.weight < 1.0) { // Минимальный вес для размножения 1.0 кг
+        // Для легковесных животных (уток, мышей) минимальный вес меньше
+        double minWeightForReproduction = 1.0;
+        if (this.maxWeight < 5) { // Для уток, мышей и т.д.
+            minWeightForReproduction = 0.2; // Меньше минимальный вес для размножения
+        }
+
+        if (this.weight < minWeightForReproduction) {
             return;
         }
 
@@ -106,9 +131,25 @@ public abstract class Animals implements Animal {
 
         // Синхронизация размножения
         synchronized (currentCell) {
-            // Добавляем вероятность размножения, например 30%
-            if (new Random().nextInt(100) > 30) {
-                return; // 70% шанс, что размножение не произойдет
+            // Проверка плотности популяции - ограничиваем общее количество особей вида
+            long totalCount = countAnimalsOfType(this.getClass());
+            int maxTotalPopulation = this.maxCountPerCell * 5; // Настройте множитель по необходимости
+
+            if (totalCount > maxTotalPopulation) {
+                // Снижаем вероятность размножения при высокой плотности
+                if (new Random().nextInt(100) > 5) { // Только 20% шанс размножения
+                    return;
+                }
+            }
+            // Стандартная логика размножения
+            int reproductionChance = 100;
+            // Если животное не ело в этом такте, шанс размножения снижается до 10%
+            if (!this.hasEaten) {
+                reproductionChance = 40;
+            }
+
+            if (new Random().nextInt(100) > reproductionChance) {
+                return;
             }
 
             // Собираем всех живых особей того же вида в этой ячейке
@@ -158,9 +199,7 @@ public abstract class Animals implements Animal {
 
                 // Добавляем потомка в ячейку
                 currentCell.addAnimal(offspring);
-
-//                System.out.println(this.getClass().getSimpleName() + " размножился! Появился потомок с весом: " +
-//                        String.format("%.2f", offspring.getWeight()));
+                ;
             } catch (InstantiationException e) {
                 System.err.println("Ошибка при создании потомка (InstantiationException): " + e.getMessage());
                 return; // Прерываем размножение при ошибке
@@ -171,6 +210,21 @@ public abstract class Animals implements Animal {
                 System.err.println("Ошибка при создании потомка: " + e.getMessage());
             }
         }
+    }
+    // Вспомогательный метод для подсчета животных определенного типа
+    private long countAnimalsOfType(Class<? extends Animal> animalType) {
+        long count = 0;
+        for (int x = 0; x < gameMap.getHeight(); x++) {
+            for (int y = 0; y < gameMap.getWidth(); y++) {
+                Cell cell = gameMap.getCell(x, y);
+                if (cell != null) {
+                    count += cell.getAnimalList().stream()
+                            .filter(animal -> animal.getClass() == animalType && animal.isAlive())
+                            .count();
+                }
+            }
+        }
+        return count;
     }
 
     @Override
@@ -185,34 +239,42 @@ public abstract class Animals implements Animal {
     //Метод для потери веса
     public void loseWeightOverTime() {
 
-        double weightLossPercent = 0.01 + (0.04 * weight / (weight + 10)); // Адаптивный процент
-        double actualWeightLoss = this.weight * weightLossPercent;
-
-        // Минимальная потеря веса для очень маленьких животных
-        actualWeightLoss = Math.max(0.001, actualWeightLoss);
-
-        this.weight -= actualWeightLoss;
-
-        // Выводим сообщение только для животных с весом > 1 или при смерти
-//        if (this.weight < 1.0 || actualWeightLoss > 0.1) {
-//            System.out.println(this.getClass().getSimpleName() + " потерял " + String.format("%.4f", actualWeightLoss) + " вес. Текущий вес: " + String.format("%.2f", this.weight));
-//        }
-        // Проверяем смерть от голода
-        if (this.weight <= 0) {
-            this.alive = false;
-//            System.out.println(this.getClass().getSimpleName() + " умер от голода");
-            // Удаляем мертвое животное с карты
-            Cell currentCell = gameMap.getCell(this.x, this.y);
-            if (currentCell != null) {
-                currentCell.removeAnimal(this);
-            }
+        // Если животное поело, оно не теряет вес в этом такте
+        if (this.hasEaten) {
+            this.hasEaten = false;
+            return;
         }
-        // Сбрасываем флаг для следующего такта
+        // Потеря веса пропорциональна максимальному весу
+        // Используем логарифмическую шкалу для плавной зависимости
+        double weightFactor = Math.log10(this.maxWeight + 1) / 10;
+        // Базовая потеря от 5% до 30% в зависимости от максимального веса
+        double baseLossPercent = Math.min(0.5, 0.3 + weightFactor);
+
+        double weightLoss = this.maxWeight *  baseLossPercent;
+        this.weight -= weightLoss;
+
+        // Более строгая проверка смерти от голода
+        if (this.weight < this.maxWeight * 0.05) { // Умирают при 5% от макс. веса
+            this.alive = false;
+            removeAnimalFromCell();
+            return;
+        }
+
         this.hasEaten = false;
     }
 
+    private void removeAnimalFromCell() {
+        Cell currentCell = gameMap.getCell(this.x, this.y);
+        if (currentCell != null) {
+            synchronized (currentCell) {
+                currentCell.removeAnimal(this);
+            }
+        }
+    }
+}
+
     //метод для отображения статистики в класс Animals
-    public void printStatus() {
+//        public void printStatus () {
 //        if (showDetailedStats) {
 //            System.out.println(this.getClass().getSimpleName() +
 //                    " at (" + (this.x + 1) + "," + (this.y + 1) + ")" + // Сдвигаем на 1 для пользователя
@@ -220,5 +282,5 @@ public abstract class Animals implements Animal {
 //                    " Alive: " + this.alive +
 //                    " HasEaten: " + this.hasEaten);
 //        }
-    }
-}
+
+

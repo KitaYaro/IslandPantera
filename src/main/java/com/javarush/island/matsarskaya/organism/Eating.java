@@ -48,8 +48,24 @@ public class Eating implements Runnable {
 
             List<Grass> availableGrass = currentCell.getGrassList();
 
-            // Сначала пробуем поесть животных (если это хищник)
-            if (!potentialPrey.isEmpty() && (plantProbability == null || plantProbability < 100)) {
+            // Проверяем, может ли животное есть растения
+            boolean canEatPlants = plantProbability != null && plantProbability > 0;
+
+            // Для травоядных сразу пробуем есть растения
+            if (canEatPlants && !availableGrass.isEmpty()) {
+                // Логика поедания растений
+                if (new Random().nextInt(100) < plantProbability) {
+                    // Поедаем одно растение
+                    Grass grass = availableGrass.get(0);
+                    double grassWeight = grass.getNutritionalValue();
+                    animal.setWeight(animal.getWeight() + grassWeight);
+                    animal.setHasEaten(true); // Помечаем, что животное поело
+
+                    currentCell.removeGrass(grass);
+                }
+            }
+            // Для хищников пробуем поесть животных
+            else if (!potentialPrey.isEmpty()) {
                 // Выбираем случайную жертву
                 Animal prey = potentialPrey.get(new Random().nextInt(potentialPrey.size()));
 
@@ -60,34 +76,12 @@ public class Eating implements Runnable {
                     // Реальное поедание
                     double preyWeight = prey instanceof Animals ? ((Animals) prey).getWeight() : 1.0;
                     animal.setWeight(animal.getWeight() + preyWeight);
+                    animal.setHasEaten(true); // Помечаем, что животное поело
 
                     // Удаляем жертву из ячейки и помечаем как мертвую
                     currentCell.removeAnimal(prey);
                     if (prey instanceof Animals) {
                         ((Animals) prey).setAlive(false);
-                    }
-
-//                    System.out.println(animal.getClass().getSimpleName() + " съел " +
-//                            prey.getClass().getSimpleName() + " (+" + String.format("%.2f", preyWeight) + " вес)");
-//                } else {
-//                    System.out.println(animal.getClass().getSimpleName() + " не смог съесть " +
-//                            prey.getClass().getSimpleName());
-//                }
-                }
-                // Если не удалось поесть животных или животное травоядное, пробуем есть растения
-                else if (!availableGrass.isEmpty() && plantProbability != null && plantProbability > 0) {
-                    // Логика поедания растений
-                    if (new Random().nextInt(100) < plantProbability) {
-                        // Поедаем одно растение
-                        Grass grass = availableGrass.get(0);
-                        double grassWeight = grass.getNutritionalValue();
-                        animal.setWeight(animal.getWeight() + grassWeight);
-
-                        currentCell.removeGrass(grass);
-
-//                    System.out.println(animal.getClass().getSimpleName() + " съел растение (+" + String.format("%.2f", grassWeight) + " вес)");
-//                } else {
-//                    System.out.println(animal.getClass().getSimpleName() + " не захотел есть растения");
                     }
                 }
             }

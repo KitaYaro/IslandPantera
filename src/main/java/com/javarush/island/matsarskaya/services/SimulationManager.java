@@ -72,9 +72,9 @@ public class SimulationManager {
 
         // Запускаем симуляцию с периодом 1 секунда
         scheduler.scheduleAtFixedRate(() -> {
-            if (!running || gameMap.countAnimals() <= 5) {
-                if (gameMap.countAnimals() <= 5) {
-                    System.out.println("Симуляция завершена: на острове осталось " + gameMap.countAnimals() + " животных. Это меньше или равно 5, программа останавливается.");
+            if (!running || gameMap.countAnimals() <= 40) {
+                if (gameMap.countAnimals() <= 40) {
+                    System.out.println("Симуляция завершена: на острове осталось " + gameMap.countAnimals() + " животных. Программа останавливается.");
                 }
                 stopSimulation();
                 return;
@@ -90,6 +90,8 @@ public class SimulationManager {
         Map<String, Integer> currentCounts = getCurrentAnimalCounts();
         System.out.println("Сейчас животных на карте:");
         printAnimalCounts(currentCounts);
+        // Добавляем информацию о траве
+        System.out.println("Травы на карте: " + gameMap.countGrass());
 
         // Подготовка к проверке питания (сохраняем вес до действий)
         for (Animal animal : herds) {
@@ -210,7 +212,6 @@ public class SimulationManager {
         // Ждем завершения всех задач
         for (java.util.concurrent.Future<?> future : futures) {
             try {
-                future.get(); // Блокируем до завершения задачи
                 future.get(); // Блокируем до завершения задачи
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();

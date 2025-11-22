@@ -8,4 +8,5 @@ public interface Animal {
     void reproduction();
     boolean isAlive();
     void loseWeightOverTime();
+    void setHasEaten(boolean hasEaten);
 }

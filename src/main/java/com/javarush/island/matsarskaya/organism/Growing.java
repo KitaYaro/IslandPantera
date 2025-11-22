@@ -23,7 +23,7 @@ public class Growing implements Runnable{
             this.grassWeight = plantStats.getWeight();
             // Вычисляем plantsPerStep на основе данных из конфигурации
             // Например, 5% от максимального количества растений в ячейке
-            this.grassPerStep = Math.max(1, plantStats.getMaxCountPerCell() / 20);
+            this.grassPerStep = Math.max(1, plantStats.getMaxCountPerCell() / 15);
         } else {
             // Значения по умолчанию, если конфигурация не найдена
             this.maxGrassParCell = 200;
@@ -35,6 +35,13 @@ public class Growing implements Runnable{
     @Override
     public void run() {
         try {
+            // Проверяем общее количество травы на карте
+            int totalGrass = gameMap.countGrass();
+
+            // Если травы больше или равно 500, прекращаем рост
+            if (totalGrass >= 200) {
+                return;
+            }
             Random random = new Random();
             // Создаем новые растения в случайных ячейках
             for (int i = 0; i < grassPerStep; i++) {
@@ -44,11 +51,13 @@ public class Growing implements Runnable{
                 Cell cell = gameMap.getCell(x, y);
                 if (cell != null) {
                     // Проверяем, не превышено ли максимальное количество растений в ячейке
-                    if (cell.getGrassList().size() < maxGrassParCell) {
-                        Grass grass = new Grass();
-                        grass.setWeight(grassWeight);
-                        grass.setCoordinates(x, y);
-                        cell.addGrass(grass);
+                    synchronized (cell) {
+                        if (cell.getGrassList().size() < maxGrassParCell) {
+                            Grass grass = new Grass();
+                            grass.setWeight(grassWeight);
+                            grass.setCoordinates(x, y);
+                            cell.addGrass(grass);
+                        }
                     }
                 }
             }

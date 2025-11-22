@@ -31,7 +31,7 @@ public class Runner {
             return;
         }
 
-        GameMap gameMap = new GameMap(30, 20);
+        GameMap gameMap = new GameMap(100, 20);
 
         // Создаем сервис для работы с конфигурацией животных
         AnimalConfigService animalConfigService = new AnimalConfigService(config);
