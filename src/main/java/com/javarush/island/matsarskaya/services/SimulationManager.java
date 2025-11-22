@@ -109,7 +109,7 @@ public class SimulationManager {
         List<Runnable> walkingTasks = new ArrayList<>();
         for (Animal animal : herds) {
             if (animal.isAlive()) {
-                walkingTasks.add(new Walking(animal));
+                walkingTasks.add(new Walking((Animals) animal));
             }
         }//выполняем действие передвижения параллельно
         executeTasks(walkingTasks);
@@ -127,7 +127,7 @@ public class SimulationManager {
         List<Runnable> reproductionTasks = new ArrayList<>();
         for (Animal animal : herds) {
             if (animal.isAlive()) {
-                reproductionTasks.add(new Reproduction(animal));
+                reproductionTasks.add(new Reproduction((Animals) animal));
             }
         }//выполняем действие размножения параллельно
         executeTasks(reproductionTasks);

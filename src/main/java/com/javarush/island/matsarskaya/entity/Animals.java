@@ -1,45 +1,72 @@
 package com.javarush.island.matsarskaya.entity;
 
 import com.javarush.island.matsarskaya.config.AnimalConfigService;
+import com.javarush.island.matsarskaya.config.AnimalParameters;
 import com.javarush.island.matsarskaya.map.Cell;
 import com.javarush.island.matsarskaya.map.GameMap;
 import com.javarush.island.matsarskaya.organism.Eating;
-import com.javarush.island.matsarskaya.organism.predator.Bear;
-import com.javarush.island.matsarskaya.organism.predator.Wolf;
+import com.javarush.island.matsarskaya.organism.Reproduction;
+import com.javarush.island.matsarskaya.organism.Walking;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.util.List;
 import java.util.Random;
-import java.util.stream.Collectors;
+
 
 @Setter
 @Getter
 public abstract class Animals implements Animal {
+    // Константы для улучшения читаемости
+    private static final double MIN_WEIGHT_RATIO_FOR_SURVIVAL = 0.05; // 5% от максимального веса для выживания
+
+    // Координаты
     private int x;
     private int y;
+
+    // Состояние
     protected boolean alive = true;
+    protected boolean hasEaten = false; // По умолчанию животное еще не ело
+
+    // Ссылки
     protected GameMap gameMap;
-    protected double weight;
+
+    // Параметры животного
+    private AnimalParameters parameters;
     private double maxWeight; // максимальный вес из конфигурации
-    protected int speed;
-    protected double foodRequired;
-    protected int maxCountPerCell;
-    protected int weightLossPerStep = 20;
-    protected boolean hasEaten = false;  // По умолчанию животное еще не ело
     private double weightBeforeEating;
-    private static boolean showDetailedStats = true; // Можно изменить на false для уменьшения вывода
+
     private static final Random random = new Random();
 
-
-    public void initializeFromConfig(double weight, int speed, double foodRequired, int maxCountPerCell, int weightLossPerStep) {
-        this.weight = weight;
+    public void initializeFromConfig(double weight, int speed, double foodRequired,
+                                     int maxCountPerCell, int weightLossPerStep) {
+        this.parameters = new AnimalParameters(weight, speed, foodRequired, maxCountPerCell, weightLossPerStep);
         this.maxWeight = weight;
-        this.speed = speed;
-        this.foodRequired = foodRequired;
-        this.maxCountPerCell = maxCountPerCell;
-        this.weightLossPerStep = weightLossPerStep;
+    }
 
+    // Делегирование методов к параметрам
+    public double getWeight() {
+        return parameters != null ? parameters.getWeight() : 0.0;
+    }
+
+    public void setWeight(double weight) {
+        if (parameters != null) {
+            parameters.setWeight(weight);
+        }
+    }
+
+    public int getSpeed() {
+        return parameters.getSpeed();
+    }
+
+    public double getFoodRequired() {
+        return parameters.getFoodRequired();
+    }
+
+    public int getMaxCountPerCell() {
+        return parameters.getMaxCountPerCell();
+    }
+
+    public int getWeightLossPerStep() {
+        return parameters.getWeightLossPerStep();
     }
 
     public void setCoordinates(int x, int y) {
@@ -49,54 +76,9 @@ public abstract class Animals implements Animal {
 
     @Override
     public void walking() {
-        if (!isAlive() || gameMap == null) return;
-
-        // Проверяем, что животное может двигаться (speed > 0)
-        if (speed <= 0) return;
-        int direction = random.nextInt(4);
-        int newX = this.x;
-        int newY = this.y;
-        // Убедимся, что speed > 0 перед вызовом nextInt
-        int moveDistance = (speed > 0) ? random.nextInt(speed) + 1 : 0;
-
-        switch (direction) {
-            case 0 -> newX = Math.max(0, this.x - moveDistance); // Вверх
-            case 1 -> newX = Math.min(gameMap.getHeight() - 1, this.x + moveDistance); // Вниз
-            case 2 -> newY = Math.max(0, this.y - moveDistance); // Влево
-            case 3 -> newY = Math.min(gameMap.getWidth() - 1, this.y + moveDistance); // Вправо
-        }
-
-        if (newX != this.x || newY != this.y) {
-            if (gameMap.isValidPosition(newX, newY)) {
-                Cell currentCell = gameMap.getCell(this.x, this.y);
-                Cell targetCell = gameMap.getCell(newX, newY);
-
-                // Синхронизация при перемещении между ячейками
-                if (currentCell != null && targetCell != null) {
-                    // Всегда захватываем мониторы в порядке возрастания координат
-                    Cell firstCell, secondCell;
-                    if (currentCell.hashCode() < targetCell.hashCode()) {
-                        firstCell = currentCell;
-                        secondCell = targetCell;
-                    } else {
-                        firstCell = targetCell;
-                        secondCell = currentCell;
-                    }
-
-                    synchronized (firstCell) {
-                        synchronized (secondCell) {
-                            // Проверяем, не превышено ли максимальное количество животных в целевой ячейке
-                            if (targetCell.getAnimalList().size() < this.maxCountPerCell) {
-                                currentCell.removeAnimal(this);
-                                targetCell.addAnimal(this);
-                                this.x = newX;
-                                this.y = newY;
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        // Делегируем выполнение отдельному классу
+        Walking walkingTask = new Walking(this);
+        walkingTask.run();
     }
 
     @Override
@@ -108,123 +90,9 @@ public abstract class Animals implements Animal {
 
     @Override
     public void reproduction() {
-        if (!isAlive() || gameMap == null) return;
-
-        // Если животное не ело в этом такте, оно не может размножаться
-//        if (!this.hasEaten) {
-//            return;
-//        }
-
-        // Добавим проверку минимального веса для размножения
-        // Для легковесных животных (уток, мышей) минимальный вес меньше
-        double minWeightForReproduction = 1.0;
-        if (this.maxWeight < 5) { // Для уток, мышей и т.д.
-            minWeightForReproduction = 0.2; // Меньше минимальный вес для размножения
-        }
-
-        if (this.weight < minWeightForReproduction) {
-            return;
-        }
-
-        Cell currentCell = gameMap.getCell(this.x, this.y);
-        if (currentCell == null) return;
-
-        // Синхронизация размножения
-        synchronized (currentCell) {
-            // Проверка плотности популяции - ограничиваем общее количество особей вида
-            long totalCount = countAnimalsOfType(this.getClass());
-            int maxTotalPopulation = this.maxCountPerCell * 5; // Настройте множитель по необходимости
-
-            if (totalCount > maxTotalPopulation) {
-                // Снижаем вероятность размножения при высокой плотности
-                if (new Random().nextInt(100) > 5) { // Только 20% шанс размножения
-                    return;
-                }
-            }
-            // Стандартная логика размножения
-            int reproductionChance = 100;
-            // Если животное не ело в этом такте, шанс размножения снижается до 10%
-            if (!this.hasEaten) {
-                reproductionChance = 40;
-            }
-
-            if (new Random().nextInt(100) > reproductionChance) {
-                return;
-            }
-
-            // Собираем всех живых особей того же вида в этой ячейке
-            List<Animal> potentialPartners = currentCell.getAnimalList().stream()
-                    .filter(animal -> animal != this && //животное не может размножаться с самим собой
-                            animal.getClass() == this.getClass() && // размножение происходит только с особями того же вида
-                            animal.isAlive() && // партнер должен быть жив
-                            animal instanceof Animals) // партнер должен быть животным
-                    .collect(Collectors.toList());
-
-            // Проверяем, достаточно ли животных для размножения (минимум 1 партнер)
-            if (potentialPartners.isEmpty()) {
-                return;
-            }
-
-            // Проверяем, не превышено ли максимальное количество животных в ячейке
-            long currentCount = currentCell.getAnimalList().stream()
-                    .filter(animal -> animal.getClass() == this.getClass())
-                    .count();
-
-            if (currentCount >= this.maxCountPerCell) {
-//                System.out.println(this.getClass().getSimpleName() + " не может размножаться - достигнут лимит в ячейке");
-                return;
-            }
-
-            // Выбираем первого партнера
-            Animals partner = (Animals) potentialPartners.get(0);
-
-            // Создаем потомка
-            try {
-                Animals offspring = this.getClass().getDeclaredConstructor().newInstance();
-
-                // Устанавливаем начальный вес потомка (сумма 10% от каждого родителя)
-                double offspringWeight = this.weight * 0.1 + partner.getWeight() * 0.1;
-                offspring.setWeight(offspringWeight);
-                offspring.setSpeed(this.speed);
-                offspring.setFoodRequired(this.foodRequired);
-                offspring.setMaxCountPerCell(this.maxCountPerCell);
-                offspring.setWeightLossPerStep(this.weightLossPerStep);
-                offspring.setGameMap(this.gameMap);
-                offspring.setCoordinates(this.x, this.y);
-                offspring.setAlive(true);
-
-                // Родители теряют вес (по 10% каждый)
-                this.weight *= 0.9; // теряет 10%
-                partner.setWeight(partner.getWeight() * 0.9); // теряет 10%
-
-                // Добавляем потомка в ячейку
-                currentCell.addAnimal(offspring);
-                ;
-            } catch (InstantiationException e) {
-                System.err.println("Ошибка при создании потомка (InstantiationException): " + e.getMessage());
-                return; // Прерываем размножение при ошибке
-            } catch (IllegalAccessException e) {
-                System.err.println("Ошибка при создании потомка (IllegalAccessException): " + e.getMessage());
-                return; // Прерываем размножение при ошибке
-            } catch (Exception e) {
-                System.err.println("Ошибка при создании потомка: " + e.getMessage());
-            }
-        }
-    }
-    // Вспомогательный метод для подсчета животных определенного типа
-    private long countAnimalsOfType(Class<? extends Animal> animalType) {
-        long count = 0;
-        for (int x = 0; x < gameMap.getHeight(); x++) {
-            for (int y = 0; y < gameMap.getWidth(); y++) {
-                Cell cell = gameMap.getCell(x, y);
-                if (cell != null) {
-                    count += cell.getAnimalList().stream()
-                            .filter(animal -> animal.getClass() == animalType && animal.isAlive())
-                            .count();
-                }
-            }
-        }
-        return count;
+        // Делегируем выполнение отдельному классу
+        Reproduction reproductionTask = new Reproduction(this);
+        reproductionTask.run();
     }
 
     @Override
@@ -233,28 +101,32 @@ public abstract class Animals implements Animal {
     }
 
     public void prepareForEatingCheck() {
-        this.weightBeforeEating = this.weight;
+        this.weightBeforeEating = this.getWeight();
     }
 
-    //Метод для потери веса
+    /**
+     * Метод для потери веса со временем
+     * Животные теряют вес каждый такт, если не ели
+     */
+    @Override
     public void loseWeightOverTime() {
-
         // Если животное поело, оно не теряет вес в этом такте
         if (this.hasEaten) {
             this.hasEaten = false;
             return;
         }
+
         // Потеря веса пропорциональна максимальному весу
         // Используем логарифмическую шкалу для плавной зависимости
         double weightFactor = Math.log10(this.maxWeight + 1) / 10;
         // Базовая потеря от 5% до 30% в зависимости от максимального веса
         double baseLossPercent = Math.min(0.5, 0.3 + weightFactor);
 
-        double weightLoss = this.maxWeight *  baseLossPercent;
-        this.weight -= weightLoss;
+        double weightLoss = this.maxWeight * baseLossPercent;
+        this.setWeight(this.getWeight() - weightLoss);
 
         // Более строгая проверка смерти от голода
-        if (this.weight < this.maxWeight * 0.05) { // Умирают при 5% от макс. веса
+        if (this.getWeight() < this.maxWeight * MIN_WEIGHT_RATIO_FOR_SURVIVAL) {
             this.alive = false;
             removeAnimalFromCell();
             return;
@@ -263,6 +135,9 @@ public abstract class Animals implements Animal {
         this.hasEaten = false;
     }
 
+    /**
+     * Удаляет животное из ячейки при смерти
+     */
     private void removeAnimalFromCell() {
         Cell currentCell = gameMap.getCell(this.x, this.y);
         if (currentCell != null) {
@@ -272,15 +147,5 @@ public abstract class Animals implements Animal {
         }
     }
 }
-
-    //метод для отображения статистики в класс Animals
-//        public void printStatus () {
-//        if (showDetailedStats) {
-//            System.out.println(this.getClass().getSimpleName() +
-//                    " at (" + (this.x + 1) + "," + (this.y + 1) + ")" + // Сдвигаем на 1 для пользователя
-//                    " Weight: " + String.format("%.2f", this.weight) +
-//                    " Alive: " + this.alive +
-//                    " HasEaten: " + this.hasEaten);
-//        }
 
 

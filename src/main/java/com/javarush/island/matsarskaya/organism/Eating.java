@@ -4,14 +4,13 @@ import com.javarush.island.matsarskaya.config.AnimalConfigService;
 import com.javarush.island.matsarskaya.entity.Animal;
 import com.javarush.island.matsarskaya.entity.Animals;
 import com.javarush.island.matsarskaya.map.Cell;
-import com.javarush.island.matsarskaya.map.GameMap;
-
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class Eating implements Runnable {
     private final Animals animal;
     private final AnimalConfigService animalConfigService;
+    private static final Random random = new Random();
 
     public Eating(Animals animal, AnimalConfigService animalConfigService) {
         this.animal = animal;
@@ -20,70 +19,113 @@ public class Eating implements Runnable {
 
     @Override
     public void run() {
-        if (!animal.isAlive()) return;
+        performEating();
+    }
 
-        GameMap gameMap = animal.getGameMap();
-        if (gameMap == null) return;
+    /**
+     * Основной метод выполнения питания
+     * Синхронизирован на уровне ячейки для предотвращения конфликтов при многопоточном доступе
+     */
+    private void performEating() {
+        if (!isEatingPossible()) return;
 
-        Cell currentCell = gameMap.getCell(animal.getX(), animal.getY());
+        Cell currentCell = animal.getGameMap().getCell(animal.getX(), animal.getY());
         if (currentCell == null) return;
-
-        // Получаем параметры питания для текущего животного
-        String animalType = animal.getClass().getSimpleName().toLowerCase();
-        Map<String, Integer> eatingProbabilities = Optional.ofNullable(animalConfigService)
-                .map(service -> service.getEatingProbabilities(animalType))
-                .orElse(Collections.emptyMap());
-
-        // Определяем, может ли животное есть растения
-        Integer plantProbability = eatingProbabilities.get("plants");
 
         // Синхронизация на уровне ячейки для выбора жертвы и поедания
         synchronized (currentCell) {
-            // Получаем животных и растения из текущей ячейки
-            List<Animal> potentialPrey = currentCell.getAnimalList().stream()
-                    .filter(Objects::nonNull)
-                    .filter(prey -> prey != animal && prey.isAlive() &&
-                            !prey.getClass().equals(animal.getClass()))
-                    .collect(Collectors.toList());
-
+            Map<String, Integer> eatingProbabilities = getEatingProbabilities();
+            List<Animal> potentialPrey = getPotentialPrey(currentCell);
             List<Grass> availableGrass = currentCell.getGrassList();
 
             // Проверяем, может ли животное есть растения
-            boolean canEatPlants = plantProbability != null && plantProbability > 0;
+            Integer grassProbability = eatingProbabilities.get("grass");
+            boolean canEatGrass = grassProbability != null && grassProbability > 0;
 
-            // Для травоядных сразу пробуем есть растения
-            if (canEatPlants && !availableGrass.isEmpty()) {
-                // Логика поедания растений
-                if (new Random().nextInt(100) < plantProbability) {
-                    // Поедаем одно растение
-                    Grass grass = availableGrass.get(0);
-                    double grassWeight = grass.getNutritionalValue();
-                    animal.setWeight(animal.getWeight() + grassWeight);
-                    animal.setHasEaten(true); // Помечаем, что животное поело
-
-                    currentCell.removeGrass(grass);
-                }
+            // Выбираем подходящую пищу в зависимости от типа животного
+            if (canEatGrass && !availableGrass.isEmpty()) {
+                tryEatGrass(availableGrass, grassProbability, currentCell);
+            } else if (!potentialPrey.isEmpty()) {
+                tryEatPrey(potentialPrey, eatingProbabilities, currentCell);
             }
-            // Для хищников пробуем поесть животных
-            else if (!potentialPrey.isEmpty()) {
-                // Выбираем случайную жертву
-                Animal prey = potentialPrey.get(new Random().nextInt(potentialPrey.size()));
+        }
+    }
 
-                String preyType = prey.getClass().getSimpleName().toLowerCase();
-                Integer probability = eatingProbabilities.get(preyType);
+    /**
+     * Проверяет, возможно ли питание для данного животного
+     * @return true если питание возможно, false если нет
+     */
+    private boolean isEatingPossible() {
+        return animal.isAlive()
+                && animal.getGameMap() != null;
+    }
 
-                if (probability != null && new Random().nextInt(100) < probability) {
-                    // Реальное поедание
-                    double preyWeight = prey instanceof Animals ? ((Animals) prey).getWeight() : 1.0;
-                    animal.setWeight(animal.getWeight() + preyWeight);
-                    animal.setHasEaten(true); // Помечаем, что животное поело
+    /**
+     * Получает вероятности поедания различных организмов из конфигурации
+     * @return Map с вероятностями поедания
+     */
+    private Map<String, Integer> getEatingProbabilities() {
+        String animalType = animal.getClass().getSimpleName().toLowerCase();
+        return Optional.ofNullable(animalConfigService)
+                .map(service -> service.getEatingProbabilities(animalType))
+                .orElse(Collections.emptyMap());
+    }
 
-                    // Удаляем жертву из ячейки и помечаем как мертвую
-                    currentCell.removeAnimal(prey);
-                    if (prey instanceof Animals) {
-                        ((Animals) prey).setAlive(false);
-                    }
-                }
+    /**
+     * Получает список потенциальных жертв в текущей ячейке
+     * @param currentCell текущая ячейка
+     * @return список животных, которые могут быть съедены
+     */
+    private List<Animal> getPotentialPrey(Cell currentCell) {
+        return currentCell.getAnimalList().stream()
+                .filter(Objects::nonNull)
+                .filter(prey -> prey != animal
+                        && prey.isAlive()
+                        && !prey.getClass().equals(animal.getClass()))
+                .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    /**
+     * Пытается поесть траву
+     * @param availableGrass список доступной травы
+     * @param grassProbability вероятность поедания травы
+     * @param currentCell текущая ячейка
+     */
+    private void tryEatGrass(List<Grass> availableGrass, Integer grassProbability, Cell currentCell) {
+        if (random.nextInt(100) < grassProbability) {
+            // Поедаем одно растение
+            availableGrass.stream()
+                    .findFirst()
+                    .ifPresent(grass -> {
+                        double grassWeight = grass.getNutritionalValue();
+                        animal.setWeight(animal.getWeight() + grassWeight);
+                        animal.setHasEaten(true);
+                        currentCell.removeGrass(grass);
+                    });
+        }
+    }
+
+    /**
+     * Пытается поесть жертву
+     * @param potentialPrey список потенциальных жертв
+     * @param eatingProbabilities вероятности поедания разных типов жертв
+     * @param currentCell текущая ячейка
+     */
+    private void tryEatPrey(List<Animal> potentialPrey, Map<String, Integer> eatingProbabilities, Cell currentCell) {
+        Animal prey = potentialPrey.get(random.nextInt(potentialPrey.size()));
+        String preyType = prey.getClass().getSimpleName().toLowerCase();
+        Integer probability = eatingProbabilities.get(preyType);
+
+        if (probability != null && random.nextInt(100) < probability) {
+            // Реальное поедание
+            double preyWeight = prey instanceof Animals ? ((Animals) prey).getWeight() : 1.0;
+            animal.setWeight(animal.getWeight() + preyWeight);
+            animal.setHasEaten(true);
+
+            // Удаляем жертву из ячейки и помечаем как мертвую
+            currentCell.removeAnimal(prey);
+            if (prey instanceof Animals) {
+                ((Animals) prey).setAlive(false);
             }
         }
     }
