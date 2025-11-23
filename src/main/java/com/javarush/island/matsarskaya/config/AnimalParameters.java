@@ -10,7 +10,7 @@ public class AnimalParameters {
     private int speed;
     private double foodRequired;
     private int maxCountPerCell;
-    private int weightLossPerStep = 20;
+    private int weightLossPerStep;
 
     public AnimalParameters(double weight, int speed, double foodRequired,
                             int maxCountPerCell, int weightLossPerStep) {

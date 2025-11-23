@@ -1,6 +1,5 @@
-package com.javarush.island.matsarskaya.organism;
+package com.javarush.island.matsarskaya.organism.actions;
 
-import com.javarush.island.matsarskaya.entity.Animal;
 import com.javarush.island.matsarskaya.entity.Animals;
 import com.javarush.island.matsarskaya.map.Cell;
 import com.javarush.island.matsarskaya.map.GameMap;
@@ -8,12 +7,12 @@ import com.javarush.island.matsarskaya.map.GameMap;
 import java.util.Random;
 
 public class Walking implements Runnable {
-    private static final int DIRECTIONS_COUNT = 4; // Количество возможных направлений движения
-    private static final int MIN_COORDINATE = 0;   // Минимальная координата
-    private static final int UP = 0;    // Направление вверх
-    private static final int DOWN = 1;  // Направление вниз
-    private static final int LEFT = 2;  // Направление влево
-    private static final int RIGHT = 3; // Направление вправо
+    private static final int DIRECTIONS_COUNT = 4;
+    private static final int MIN_COORDINATE = 0;
+    private static final int UP = 0;
+    private static final int DOWN = 1;
+    private static final int LEFT = 2;
+    private static final int RIGHT = 3;
 
     private final Animals animal;
     private static final Random random = new Random();
@@ -27,14 +26,8 @@ public class Walking implements Runnable {
         performWalking();
     }
 
-    /**
-     * Основной метод выполнения перемещения
-     * Синхронизирован на уровне ячеек для предотвращения конфликтов при многопоточном доступе
-     */
     private void performWalking() {
         if (!canMove()) return;
-
-        // Вычисляем параметры движения
         int direction = random.nextInt(DIRECTIONS_COUNT);
         int moveDistance = random.nextInt(animal.getSpeed()) + 1;
 
@@ -48,28 +41,18 @@ public class Walking implements Runnable {
             case RIGHT -> newY = Math.min(animal.getGameMap().getWidth() - 1, animal.getY() + moveDistance);
         }
 
-        // Проверяем, нужно ли выполнять перемещение
         if ((newX != animal.getX() || newY != animal.getY())
                 && animal.getGameMap().isValidPosition(newX, newY)) {
             executeMovement(newX, newY);
         }
     }
 
-    /**
-     * Проверяет, может ли животное двигаться
-     * @return true если движение возможно, false если нет
-     */
     private boolean canMove() {
         return animal.isAlive()
                 && animal.getGameMap() != null
                 && animal.getSpeed() > 0;
     }
 
-    /**
-     * Выполняет фактическое перемещение животного
-     * @param newX новая координата X
-     * @param newY новая координата Y
-     */
     private void executeMovement(int newX, int newY) {
         GameMap gameMap = animal.getGameMap();
         Cell currentCell = gameMap.getCell(animal.getX(), animal.getY());

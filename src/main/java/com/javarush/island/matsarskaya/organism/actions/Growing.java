@@ -1,9 +1,10 @@
-package com.javarush.island.matsarskaya.organism;
+package com.javarush.island.matsarskaya.organism.actions;
 
 import com.javarush.island.matsarskaya.config.AnimalConfigService;
 import com.javarush.island.matsarskaya.config.AnimalStats;
 import com.javarush.island.matsarskaya.map.Cell;
 import com.javarush.island.matsarskaya.map.GameMap;
+import com.javarush.island.matsarskaya.organism.Grass;
 
 import java.util.Random;
 
@@ -13,19 +14,14 @@ public class Growing implements Runnable{
     private final double grassWeight;
     private final int grassPerStep;
 
-
-    // метод для вычисления скорости появления новых растений
     public Growing(GameMap gameMap, AnimalConfigService configService) {
         this.gameMap = gameMap;
         AnimalStats plantStats = configService.getPlantStats();
         if (plantStats != null) {
             this.maxGrassParCell = plantStats.getMaxCountPerCell();
             this.grassWeight = plantStats.getWeight();
-            // Вычисляем plantsPerStep на основе данных из конфигурации
-            // Например, 5% от максимального количества растений в ячейке
             this.grassPerStep = Math.max(1, plantStats.getMaxCountPerCell() / 15);
         } else {
-            // Значения по умолчанию, если конфигурация не найдена
             this.maxGrassParCell = 200;
             this.grassWeight = 1.0;
             this.grassPerStep = 10;
@@ -35,22 +31,18 @@ public class Growing implements Runnable{
     @Override
     public void run() {
         try {
-            // Проверяем общее количество травы на карте
             int totalGrass = gameMap.countGrass();
 
-            // Если травы больше или равно 500, прекращаем рост
             if (totalGrass >= 200) {
                 return;
             }
             Random random = new Random();
-            // Создаем новые растения в случайных ячейках
             for (int i = 0; i < grassPerStep; i++) {
                 int x = random.nextInt(gameMap.getHeight());
                 int y = random.nextInt(gameMap.getWidth());
 
                 Cell cell = gameMap.getCell(x, y);
                 if (cell != null) {
-                    // Проверяем, не превышено ли максимальное количество растений в ячейке
                     synchronized (cell) {
                         if (cell.getGrassList().size() < maxGrassParCell) {
                             Grass grass = new Grass();

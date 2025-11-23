@@ -3,7 +3,6 @@ package com.javarush.island.matsarskaya.map;
 import com.javarush.island.matsarskaya.entity.Animal;
 import com.javarush.island.matsarskaya.organism.Grass;
 import lombok.Getter;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,9 +10,8 @@ import java.util.List;
 public class Cell {
     protected List<Animal> animalList = new ArrayList<>();
     protected List<Grass> grassList = new ArrayList<>();
-    private int cellX;
-    private int cellY;
-    private GameMap gameMap;
+    private final int cellX;
+    private final int cellY;
 
     public Cell (int cellX, int cellY) {
         this.cellX = cellX;
@@ -35,11 +33,4 @@ public class Cell {
     public List<Animal> getAnimalList(){
         return new ArrayList<>(animalList);
     }
-    public Cell getNeighboringCell(int x, int y) {
-        if (gameMap != null && gameMap.isValidPosition(x, y)){
-            return gameMap.getCell(x, y);
-        }
-        return null;
-    }
-
 }
